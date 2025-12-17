@@ -2,18 +2,18 @@
 
 Deploy 2GB quantum GGUF models to DigitalOcean using Spaces + Droplets.
 
-**Cost: $11/month | Free tier: 18 months on $200 credit**
+**Cost: \/month | Free tier: 18 months on \ credit**
 
 ## Quick Start
 
 1. **Create DigitalOcean account** → https://digitalocean.com
-2. **Grab $200 credit** (60 days) or enable billing
+2. **Grab \ credit** (60 days) or enable billing
 3. **Generate API token** → Account → API → Tokens
 4. **Fork this repo** → Your GitHub account
 5. **Deploy:**
-   - Option A: App Platform (easiest) → See `.do/app.yaml`
-   - Option B: Terraform → See `deploy/terraform/`
-   - Option C: Manual SSH → See `deploy/scripts/`
+   - Option A: App Platform (easiest) → See .do/app.yaml
+   - Option B: Terraform → See deploy/terraform/
+   - Option C: Manual SSH → See deploy/scripts/
 
 ## Deployment Options
 
@@ -22,30 +22,30 @@ Deploy 2GB quantum GGUF models to DigitalOcean using Spaces + Droplets.
 1. Go to https://cloud.digitalocean.com/apps
 2. Create App → GitHub
 3. Select this repository
-4. DigitalOcean auto-detects `.do/app.yaml`
+4. DigitalOcean auto-detects .do/app.yaml
 5. Deploy
 
-Automatic CI/CD: Every push to `main` triggers deployment.
+Automatic CI/CD: Every push to main triggers deployment.
 
 ### Option B: Terraform
 
-```bash
+`ash
 cd deploy/terraform
 terraform init
 terraform apply
-```
+`
 
 ### Option C: Manual SSH
 
-```bash
+`ash
 bash deploy/scripts/deploy-to-digitalocean.sh <droplet-ip>
-```
+`
 
 ## Architecture
 
-```
+`
 Spaces (S3 CDN)    Droplet (API Server)
-    $5/mo              $6/mo
+    \/mo              \/mo
    250GB              1 vCPU
   1TB free           1 GB RAM
    egress
@@ -55,11 +55,11 @@ Spaces (S3 CDN)    Droplet (API Server)
     llama.cpp server
     2GB quantum models
     Port 8080
-```
+`
 
 ## API Usage
 
-```bash
+`ash
 # Health check
 curl http://<droplet-ip>:8080/health
 
@@ -70,34 +70,34 @@ curl -X POST http://<droplet-ip>:8080/v1/completions \
 
 # Full API docs
 http://<droplet-ip>:8080/docs
-```
+`
 
 ## Cost
 
 | Component | Cost | Details |
 |-----------|------|---------|
-| Spaces | $5/mo | 250 GB included, 1 TB egress free, CDN auto |
-| Droplet | $6/mo | 1 vCPU, 1 GB RAM, 25 GB SSD, no backups |
-| **Total** | **$11/mo** | **18 months free on $200 credit** |
+| Spaces | \/mo | 250 GB included, 1 TB egress free, CDN auto |
+| Droplet | \/mo | 1 vCPU, 1 GB RAM, 25 GB SSD, no backups |
+| **Total** | **\/mo** | **18 months free on \ credit** |
 
 ## Documentation
 
-- Full setup guide: [`deploy/README-CLOUD-HOSTING.md`](deploy/README-CLOUD-HOSTING.md)
-- Deployment scripts: [`deploy/scripts/`](deploy/scripts/)
-- Terraform configs: [`deploy/terraform/`](deploy/terraform/)
-- Docker image: [`deploy/docker/`](deploy/docker/)
-- App config: [`.do/app.yaml`](.do/app.yaml)
-- CI/CD workflow: [`.github/workflows/deploy-digitalocean.yml`](.github/workflows/deploy-digitalocean.yml)
+- Full setup guide: [deploy/README-CLOUD-HOSTING.md](deploy/README-CLOUD-HOSTING.md)
+- Deployment scripts: [deploy/scripts/](deploy/scripts/)
+- Terraform configs: [deploy/terraform/](deploy/terraform/)
+- Docker image: [deploy/docker/](deploy/docker/)
+- App config: [.do/app.yaml](.do/app.yaml)
+- CI/CD workflow: [.github/workflows/deploy-digitalocean.yml](.github/workflows/deploy-digitalocean.yml)
 
 ## GitHub Actions Setup
 
-When you push to `main`, GitHub Actions automatically:
+When you push to main, GitHub Actions automatically:
 1. Build Docker image with llama.cpp server
 2. Push to GitHub Container Registry (GHCR)
 3. Deploy to DigitalOcean App Platform
 
 **Required GitHub Secrets:**
-- `DIGITALOCEAN_ACCESS_TOKEN` (Get from DigitalOcean Account → API)
+- \DIGITALOCEAN_ACCESS_TOKEN\ (Get from DigitalOcean Account → API)
 
 Settings → Secrets and variables → Actions → New repository secret
 
@@ -105,7 +105,7 @@ Settings → Secrets and variables → Actions → New repository secret
 
 Test locally before deploying:
 
-```bash
+`ash
 bash deploy/scripts/local-dev-setup.sh
 
 # Test API
@@ -116,25 +116,25 @@ docker-compose -f deploy/docker/docker-compose.yml logs -f
 
 # Stop
 docker-compose -f deploy/docker/docker-compose.yml down
-```
+`
 
 ## Upload Models to Spaces
 
-```bash
+`ash
 export DO_SPACES_KEY="your_key"
 export DO_SPACES_SECRET="your_secret"
 export DIGITALOCEAN_TOKEN="your_token"
 
 bash deploy/scripts/upload-to-spaces.sh
-```
+`
 
 ## Scaling
 
 | Setup | Droplets | RAM | Cost/mo |
 |-------|----------|-----|---------|
-| Dev | 1 | 1 GB | $11 |
-| Prod | 5 | 1 GB | $35 |
-| 70B models | 1 | 32 GB | $160 |
+| Dev | 1 | 1 GB | \ |
+| Prod | 5 | 1 GB | \ |
+| 70B models | 1 | 32 GB | \ |
 
 ## Links
 
