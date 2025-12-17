@@ -1,0 +1,40 @@
+# Local development
+deploy/models/
+deploy/cache/
+models/
+cache/
+
+# Docker
+.env.local
+docker-compose.override.yml
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+!example.tfvars
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Build artifacts
+*.o
+*.out
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.sublime-project
+
+# Secrets
+.env
+.env.local
+secrets.txt
