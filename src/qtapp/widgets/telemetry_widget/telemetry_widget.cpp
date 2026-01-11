@@ -120,12 +120,12 @@ double TelemetryWidget::getRandomMetricValue() {
     QString metric = m_metricSelector->currentText();
     
     if (metric == "CPU Usage") {
-        return QRandomGenerator::global()->bounded(20.0, 80.0);
+        return 20.0 + (QRandomGenerator::global()->bounded(60) * 1.0);
     } else if (metric == "Memory Usage") {
-        return QRandomGenerator::global()->bounded(40.0, 90.0);
+        return 40.0 + (QRandomGenerator::global()->bounded(50) * 1.0);
     } else if (metric == "Network Latency") {
-        return QRandomGenerator::global()->bounded(10.0, 100.0);
+        return 10.0 + (QRandomGenerator::global()->bounded(90) * 1.0);
     } else { // Disk I/O
-        return QRandomGenerator::global()->bounded(5.0, 95.0);
+        return 5.0 + (QRandomGenerator::global()->bounded(90) * 1.0);
     }
 }

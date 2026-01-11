@@ -1,5 +1,6 @@
 #include "inline_chat_widget.h"
 #include <QScrollBar>
+#include <QTimer>
 
 InlineChatWidget::InlineChatWidget(QWidget *parent)
     : QWidget(parent)

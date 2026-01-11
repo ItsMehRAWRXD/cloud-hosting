@@ -1,6 +1,7 @@
 #include "task_manager_widget.h"
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QLabel>
 
 TaskManagerWidget::TaskManagerWidget(QWidget *parent)
     : QWidget(parent)
