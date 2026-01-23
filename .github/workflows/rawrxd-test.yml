@@ -1,0 +1,40 @@
+name: RawrXD Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'copilot/**'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_GUI=OFF ..
+          make -j$(nproc)
+
+      - name: Run Self-Test Gate
+        run: |
+          cd build
+          ./bin/self_test_gate
+
+      - name: Test CLI Commands
+        run: |
+          cd build
+          ./bin/rawrxd-cli help
+          ./bin/rawrxd-cli version
+          ./bin/rawrxd-cli devices
+          ./bin/rawrxd-cli info
