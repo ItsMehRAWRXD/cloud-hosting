@@ -1,27 +1,52 @@
-# Cloud Hosting for RawrXD Quantum Models
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.Python
+*.egg-info/
 
-Deploy 2GB quantum GGUF models to DigitalOcean using Spaces + Droplets.
+# Build artifacts
+build/
+build_*/
+bin/
+lib/
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.obj
+*.a
+*.lib
 
-**Cost: \/month | Free tier: 18 months on \ credit**
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
 
-## Quick Start
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-1. Create DigitalOcean account → https://digitalocean.com
-2. Deploy via App Platform or Terraform
-3. Upload 2GB quantum models
-4. Done!
+# OS
+.DS_Store
+Thumbs.db
 
-## Documentation
-- Full guide: deploy/README-CLOUD-HOSTING.md
-- Terraform: deploy/terraform/
-- Docker: deploy/docker/
-"@
+# Logs
+*.log
 
- | Out-File C:\cloud-hosting\README.md -Encoding UTF8
-Write-Host "[✓] README created"
+# Model files (large)
+*.gguf
+*.bin
+*.safetensors
 
-# Create .gitignore
-@"
+# Terraform
 deploy/models/
 deploy/cache/
 .terraform/
@@ -30,3 +55,7 @@ terraform.tfstate*
 *.tfvars
 .env
 .env.local
+
+# Test outputs
+*.xml
+*.html
