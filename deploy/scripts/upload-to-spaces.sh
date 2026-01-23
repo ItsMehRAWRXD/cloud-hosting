@@ -10,7 +10,6 @@ SPACES_BUCKET="rawrxd-quantum-models"
 SPACES_REGION="nyc3"
 SPACES_ENDPOINT="https://${SPACES_REGION}.digitaloceanspaces.com"
 MODELS_DIR="${HOME}/models"
-DO_API_TOKEN="${DIGITALOCEAN_TOKEN}"
 
 # Model inventory (2GB quantum models)
 declare -a MODELS=(
@@ -54,7 +53,7 @@ for model in "${MODELS[@]}"; do
             "s3://${SPACES_BUCKET}/models/${model}" \
             --endpoint-url "${SPACES_ENDPOINT}" \
             --acl public-read \
-            --expected-size $(stat -f%z "${MODELS_DIR}/${model}" 2>/dev/null || stat -c%s "${MODELS_DIR}/${model}") \
+            --expected-size $(wc -c < "${MODELS_DIR}/${model}") \
             --metadata "model-type=quantum,quantization=q4,size-gb=2" \
             --storage-class STANDARD
         echo "  [✓] ${model} uploaded"
