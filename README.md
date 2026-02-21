@@ -4,7 +4,20 @@ Deploy quantum GGUF models to the cloud **OR** run them completely offline on yo
 
 ## ⚡ Quick Start - Choose Your Path
 
-### 🏠 Local/Offline (Recommended for Personal Use)
+### 🚀 Super Quick Start (Recommended!)
+**The Absolute Easiest!** - One command to install, download models, and launch everything:
+
+```bash
+./quick-start.sh
+```
+
+Opens Web UI at **http://localhost:8081** automatically! 🎉
+
+📖 **Quick Guide:** [QUICKSTART.md](QUICKSTART.md)
+
+---
+
+### 🏠 Local/Offline (Best for Personal Use)
 **The Absolute Bestest!** - Run AI models on your own machine, completely offline, 100% private!
 
 ```bash
@@ -16,6 +29,9 @@ Deploy quantum GGUF models to the cloud **OR** run them completely offline on yo
 
 # Start server
 rawrxd-serve
+
+# Or start everything (server + UI)
+./quick-start.sh
 ```
 
 ✨ **Benefits:**
