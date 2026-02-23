@@ -3,7 +3,7 @@ param(
     [string]$Config = "Release",
 
     [ValidateSet("x64", "Win32", "ARM64")]
-    [string]$A = "x64"
+    [string]$Arch = "x64"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +13,7 @@ $SourceDir = Join-Path $PSScriptRoot ".."
 
 Write-Host "=== RawrXD-AgenticIDE Build ===" -ForegroundColor Cyan
 Write-Host "  Configuration: $Config"
-Write-Host "  Architecture:  $A"
+Write-Host "  Architecture:  $Arch"
 Write-Host ""
 
 # Create build directory
@@ -24,7 +24,7 @@ if (-not (Test-Path $BuildDir)) {
 
 # Configure
 Write-Host "Configuring with CMake..." -ForegroundColor Yellow
-cmake -S $SourceDir -B $BuildDir -G "Visual Studio 17 2022" -A $A
+cmake -S $SourceDir -B $BuildDir -G "Visual Studio 17 2022" -A $Arch
 if ($LASTEXITCODE -ne 0) {
     Write-Host "CMake configure FAILED (exit code $LASTEXITCODE)" -ForegroundColor Red
     exit $LASTEXITCODE
@@ -40,5 +40,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
-Write-Host "Build succeeded: $Config | $A" -ForegroundColor Green
+Write-Host "Build succeeded: $Config | $Arch" -ForegroundColor Green
 exit 0
