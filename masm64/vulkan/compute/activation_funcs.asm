@@ -485,6 +485,10 @@ Sigmoid PROC
     
     mov DWORD PTR [rsp+10h], 3F800000h  ; 1.0
     movss xmm5, DWORD PTR [rsp+10h]
+    mov DWORD PTR [rsp+14h], 3F000000h  ; 0.5
+    movss xmm6, DWORD PTR [rsp+14h]
+    mov DWORD PTR [rsp+18h], 41D80000h  ; 27.0
+    movss xmm7, DWORD PTR [rsp+18h]
     
 sigmoid_loop:
     cmp r9, r8
@@ -494,30 +498,36 @@ sigmoid_loop:
     shl rax, 2
     movss xmm0, DWORD PTR [rcx + rax]
     
-    ; Negate
-    mov DWORD PTR [rsp+14h], 80000000h  ; -0.0 (sign bit)
-    movss xmm1, DWORD PTR [rsp+14h]
-    xorps xmm0, xmm1    ; -x
+    ; sigmoid(x) = 0.5 * (1 + tanh(x/2))
+    ; First compute x/2
+    mulss xmm0, xmm6    ; xmm0 = x/2
     
-    ; Fast sigmoid approximation: 1 / (1 + exp(-x))
-    ; Using tanh: sigmoid(x) = 0.5 * (1 + tanh(x/2))
+    ; Tanh approximation: tanh(z) = z*(27+z²)/(27+9z²)
+    movss xmm1, xmm0
+    mulss xmm1, xmm1    ; xmm1 = z² where z = x/2
     
-    ; x/2
-    mov DWORD PTR [rsp+18h], 3F000000h  ; 0.5
-    movss xmm2, DWORD PTR [rsp+18h]
-    mulss xmm0, xmm2
+    ; Numerator: z * (27 + z²)
+    movss xmm2, xmm7    ; 27.0
+    addss xmm2, xmm1    ; 27 + z²
+    mulss xmm2, xmm0    ; z * (27 + z²)
     
-    ; Tanh approximation (simplified)
-    ; Result approximated as x for small values
-    ; Full implementation would use TanhApprox
+    ; Denominator: 27 + 9*z²
+    movss xmm3, xmm1    ; z²
+    mov DWORD PTR [rsp+1Ch], 41100000h  ; 9.0
+    movss xmm4, DWORD PTR [rsp+1Ch]
+    mulss xmm3, xmm4    ; 9*z²
+    addss xmm3, xmm7    ; 27 + 9*z²
+    
+    ; tanh(x/2) = numerator / denominator
+    divss xmm2, xmm3
     
     ; 1 + tanh(x/2)
-    addss xmm0, xmm5
+    addss xmm2, xmm5
     
-    ; 0.5 * result
-    mulss xmm0, xmm2
+    ; 0.5 * (1 + tanh(x/2))
+    mulss xmm2, xmm6
     
-    movss DWORD PTR [rdi + rax], xmm0
+    movss DWORD PTR [rdi + rax], xmm2
     
     inc r9
     jmp sigmoid_loop

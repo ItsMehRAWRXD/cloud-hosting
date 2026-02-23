@@ -51,6 +51,7 @@ vkCreateFenceMASM PROC
     sub rsp, 40h
     push rbx
     push rdi
+    push r12
     
     ; Validate inputs
     test rcx, rcx
@@ -59,6 +60,9 @@ vkCreateFenceMASM PROC
     jz fence_error
     test r9, r9
     jz fence_error
+    
+    ; Save R9 (output VkFence pointer) before it gets clobbered
+    mov r12, r9
     
     ; Check if we have space
     mov eax, g_fenceCount
@@ -124,8 +128,7 @@ fence_store_handle:
     ; Return handle (encode slot in lower bits)
     shl rax, 8
     or rax, rcx
-    mov rbx, [rbp+40h]  ; Get r9 from original call
-    mov [rbx], rax
+    mov [r12], rax      ; Store handle via saved R9 pointer
     
     ; Increment count
     inc g_fenceCount
@@ -141,6 +144,7 @@ fence_error:
     mov eax, VK_ERROR_INITIALIZATION_FAILED
     
 fence_cleanup:
+    pop r12
     pop rdi
     pop rbx
     add rsp, 40h

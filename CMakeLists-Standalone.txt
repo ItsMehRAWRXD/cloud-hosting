@@ -1,0 +1,92 @@
+cmake_minimum_required(VERSION 3.20)
+project(RawrXD-Standalone VERSION 1.0.0 LANGUAGES CXX)
+
+# ── C++20 & static runtime ──────────────────────────────────────────────────
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+# Output directories
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
+
+# ── Options ─────────────────────────────────────────────────────────────────
+option(ENABLE_MASM_LIBS "Link MASM x64 libraries (vulkan, compression, crypto, gpu)" OFF)
+option(ENABLE_ASAN      "Enable AddressSanitizer" OFF)
+
+# ── ASAN ────────────────────────────────────────────────────────────────────
+if(ENABLE_ASAN)
+    if(MSVC)
+        add_compile_options(/fsanitize=address)
+    else()
+        add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address)
+    endif()
+    message(STATUS "AddressSanitizer enabled")
+endif()
+
+# ── Standalone IDE executable ───────────────────────────────────────────────
+# No Qt dependency — uses the built-in StandaloneWebBridge for the UI.
+set(STANDALONE_SOURCES
+    standalone_main.cpp
+    standalone_web_bridge.cpp
+)
+
+add_executable(RawrXD-Standalone ${STANDALONE_SOURCES})
+
+target_include_directories(RawrXD-Standalone PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+if(WIN32)
+    target_link_libraries(RawrXD-Standalone PRIVATE ws2_32)
+endif()
+
+# ── MASM libraries (optional) ──────────────────────────────────────────────
+if(ENABLE_MASM_LIBS)
+    set(MASM_LIB_DIR "${CMAKE_SOURCE_DIR}/masm64/lib")
+    if(EXISTS "${MASM_LIB_DIR}")
+        target_link_directories(RawrXD-Standalone PRIVATE ${MASM_LIB_DIR})
+        target_link_libraries(RawrXD-Standalone PRIVATE
+            vulkan_masm
+            compression_masm
+            crypto_masm
+            gpu_masm
+        )
+        target_compile_definitions(RawrXD-Standalone PRIVATE HAS_MASM_LIBS)
+        message(STATUS "MASM libraries linked from ${MASM_LIB_DIR}")
+    else()
+        message(WARNING "MASM lib directory not found: ${MASM_LIB_DIR}")
+    endif()
+endif()
+
+# ── RawrXD-Crypto library (includes UAC privilege check) ───────────────────
+# The UAC assembly is Windows-only and requires ml64 (MASM).
+if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    enable_language(ASM_MASM)
+
+    set(CRYPTO_SOURCES
+        src/security/uac_bypass_masm.asm
+    )
+    add_library(RawrXD-Crypto STATIC ${CRYPTO_SOURCES})
+    set_target_properties(RawrXD-Crypto PROPERTIES LINKER_LANGUAGE CXX)
+
+    target_link_libraries(RawrXD-Standalone PRIVATE RawrXD-Crypto advapi32)
+    target_compile_definitions(RawrXD-Standalone PRIVATE HAS_UAC_CHECK)
+    message(STATUS "RawrXD-Crypto target enabled (UAC privilege check)")
+else()
+    message(STATUS "RawrXD-Crypto skipped (requires Win64 + ml64)")
+endif()
+
+# ── Summary ─────────────────────────────────────────────────────────────────
+message(STATUS "")
+message(STATUS "=== RawrXD-Standalone Build Configuration ===")
+message(STATUS "  C++ Standard:      ${CMAKE_CXX_STANDARD}")
+message(STATUS "  Build Type:        ${CMAKE_BUILD_TYPE}")
+message(STATUS "  MSVC Runtime:      Static (MultiThreaded)")
+message(STATUS "  MASM Libs:         ${ENABLE_MASM_LIBS}")
+message(STATUS "  ASAN:              ${ENABLE_ASAN}")
+message(STATUS "===============================================")

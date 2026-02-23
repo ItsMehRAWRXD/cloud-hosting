@@ -326,6 +326,9 @@ vkFreeMemoryMASM PROC
     test rdx, rdx
     jz free_done
     
+    ; Save memory pointer before GetProcessHeap clobbers RDX
+    mov rbx, rdx
+    
     ; Free memory from heap
     call GetProcessHeap
     test rax, rax
@@ -333,7 +336,7 @@ vkFreeMemoryMASM PROC
     
     mov rcx, rax    ; Heap handle
     xor edx, edx    ; Flags
-    mov r8, rdx     ; Memory pointer (from RDX before)
+    mov r8, rbx     ; Memory pointer (saved in RBX)
     call HeapFree
     
 free_done:

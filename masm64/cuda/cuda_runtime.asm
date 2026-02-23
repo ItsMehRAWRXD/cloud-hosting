@@ -125,13 +125,16 @@ cudaMalloc PROC
     EXTERN GetProcessHeap:PROC
     EXTERN HeapAlloc:PROC
     
+    ; Save size before GetProcessHeap clobbers RDX
+    mov [rbp-8], rdx
+    
     call GetProcessHeap
     test rax, rax
     jz cuda_malloc_oom
     
     mov rcx, rax
     xor edx, edx
-    mov r8, [rbp+16]    ; Size from original RDX
+    mov r8, [rbp-8]    ; Size (saved before GetProcessHeap)
     call HeapAlloc
     test rax, rax
     jz cuda_malloc_oom

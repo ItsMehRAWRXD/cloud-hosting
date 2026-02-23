@@ -234,6 +234,7 @@ adler32 PROC
     mov rbp, rsp
     push rbx
     push rdi
+    push r12
     
     test rdx, rdx
     jz adler32_error
@@ -261,30 +262,22 @@ adler32_loop:
     add eax, ecx
     xor edx, edx
     div r10d
-    mov eax, edx
+    mov eax, edx        ; A = remainder
     
     ; B = (B + A) % 65521
     add ebx, eax
+    mov r12d, eax       ; Save A in r12
     mov eax, ebx
     xor edx, edx
     div r10d
-    mov ebx, edx
-    mov eax, edx
-    
-    ; Restore A
-    push rbx
-    mov ebx, eax
-    pop rax
-    mov eax, ebx
-    pop rbx
-    push rax
+    mov ebx, edx        ; B = remainder
+    mov eax, r12d       ; Restore A
     
     inc r9
     jmp adler32_loop
     
 adler32_combine:
     ; Combine: (B << 16) | A
-    pop rax
     shl ebx, 16
     or eax, ebx
     jmp adler32_cleanup
@@ -297,6 +290,7 @@ adler32_error:
     mov eax, 1  ; Initial Adler32 value
     
 adler32_cleanup:
+    pop r12
     pop rdi
     pop rbx
     pop rbp
