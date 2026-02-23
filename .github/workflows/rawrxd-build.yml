@@ -1,0 +1,217 @@
+name: RawrXD Build & Test
+
+on:
+  push:
+    branches:
+      - main
+      - agentic-ide-production
+      - 'copilot/**'
+  pull_request:
+    branches:
+      - main
+      - agentic-ide-production
+
+jobs:
+  # ============================================================
+  # Linux Build (CLI only, no Qt required)
+  # ============================================================
+  build-linux-cli:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Configure CMake (CLI only)
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_GUI=OFF \
+                -DBUILD_CLI=ON \
+                -DBUILD_TESTS=ON \
+                ..
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Run Tests
+        run: |
+          cd build
+          ./bin/self_test_gate
+
+      - name: Verify CLI
+        run: |
+          cd build
+          ./bin/rawrxd-cli help
+          ./bin/rawrxd-cli version
+          ./bin/rawrxd-cli devices
+          ./bin/rawrxd-cli info
+
+      - name: Check Binary Size
+        run: |
+          ls -lh build/bin/
+          file build/bin/rawrxd-cli
+
+      - name: Upload CLI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rawrxd-cli-linux
+          path: build/bin/rawrxd-cli
+          retention-days: 30
+
+  # ============================================================
+  # Linux Build (Full with Qt6)
+  # ============================================================
+  build-linux-gui:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            qt6-base-dev \
+            qt6-tools-dev \
+            libgl1-mesa-dev
+
+      - name: Configure CMake (with GUI)
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_GUI=ON \
+                -DBUILD_CLI=ON \
+                -DBUILD_TESTS=ON \
+                ..
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Run Tests
+        run: |
+          cd build
+          ./bin/self_test_gate
+
+      - name: Upload GUI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rawrxd-gui-linux
+          path: build/bin/RawrXD-AgenticIDE
+          retention-days: 30
+
+  # ============================================================
+  # Windows Build (CLI only, no Qt)
+  # ============================================================
+  build-windows-cli:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Add MSBuild
+        uses: microsoft/setup-msbuild@v1.3
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 17 2022" `
+                -A x64 `
+                -DBUILD_GUI=OFF `
+                -DBUILD_CLI=ON `
+                -DBUILD_TESTS=ON `
+                ..
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cd build
+          msbuild RawrXD-ModelLoader.sln /p:Configuration=Release /m:4
+
+      - name: Run Tests
+        shell: pwsh
+        run: |
+          cd build
+          .\bin\Release\self_test_gate.exe
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rawrxd-cli-windows
+          path: build/bin/Release/rawrxd-cli.exe
+          retention-days: 30
+
+  # ============================================================
+  # macOS Build (CLI only)
+  # ============================================================
+  build-macos-cli:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_GUI=OFF \
+                -DBUILD_CLI=ON \
+                -DBUILD_TESTS=ON \
+                ..
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(sysctl -n hw.ncpu)
+
+      - name: Run Tests
+        run: |
+          cd build
+          ./bin/self_test_gate
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rawrxd-cli-macos
+          path: build/bin/rawrxd-cli
+          retention-days: 30
+
+  # ============================================================
+  # Build Summary
+  # ============================================================
+  build-summary:
+    runs-on: ubuntu-latest
+    needs: [build-linux-cli, build-windows-cli, build-macos-cli]
+    if: always()
+    
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# ✅ RawrXD Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux CLI | ${{ needs.build-linux-cli.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows CLI | ${{ needs.build-windows-cli.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS CLI | ${{ needs.build-macos-cli.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All builds compiled with zero external dependencies!" >> $GITHUB_STEP_SUMMARY

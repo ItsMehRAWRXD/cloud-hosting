@@ -30,3 +30,54 @@ terraform.tfstate*
 *.tfvars
 .env
 .env.local
+
+# RawrXD Build artifacts
+build/
+build_*/
+cmake-build-*/
+out/
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.o
+*.obj
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.vcxproj.filters
+
+# Qt
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+*.qm
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*~
+
+# Test outputs
+Testing/
+CTestTestfile.cmake
