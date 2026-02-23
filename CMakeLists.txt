@@ -125,6 +125,34 @@ if(OpenSSL_FOUND)
     target_compile_definitions(RawrXD-AgenticIDE PRIVATE HAS_OPENSSL)
 endif()
 
+# RawrXD-Crypto library (UAC privilege check, Win64 only)
+if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    enable_language(ASM_MASM)
+    add_library(RawrXD-Crypto STATIC src/security/uac_bypass_masm.asm)
+    set_target_properties(RawrXD-Crypto PROPERTIES LINKER_LANGUAGE CXX)
+    target_link_libraries(RawrXD-AgenticIDE PRIVATE RawrXD-Crypto advapi32)
+    target_compile_definitions(RawrXD-AgenticIDE PRIVATE HAS_UAC_CHECK)
+    message(STATUS "RawrXD-Crypto target enabled (UAC privilege check)")
+endif()
+
+# Win32IDE standalone target (no Qt dependency)
+add_executable(Win32IDE
+    standalone_main.cpp
+    standalone_web_bridge.cpp
+)
+target_include_directories(Win32IDE PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+)
+if(WIN32)
+    target_link_libraries(Win32IDE PRIVATE ws2_32)
+    if(TARGET RawrXD-Crypto)
+        target_link_libraries(Win32IDE PRIVATE RawrXD-Crypto advapi32)
+        target_compile_definitions(Win32IDE PRIVATE HAS_UAC_CHECK)
+    endif()
+endif()
+
 # Testing
 if(ENABLE_TESTING)
     enable_testing()
