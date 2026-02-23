@@ -1,10 +1,53 @@
-# Cloud Hosting for RawrXD Quantum Models
+# RawrXD Quantum Models - Cloud + Local + Offline
 
-Deploy 2GB quantum GGUF models to DigitalOcean using Spaces + Droplets.
+Deploy quantum GGUF models to the cloud **OR** run them completely offline on your local machine!
+
+## ⚡ Quick Start - Choose Your Path
+
+### 🚀 Super Quick Start (Recommended!)
+**The Absolute Easiest!** - One command to install, download models, and launch everything:
+
+```bash
+./quick-start.sh
+```
+
+Opens Web UI at **http://localhost:8081** automatically! 🎉
+
+📖 **Quick Guide:** [QUICKSTART.md](QUICKSTART.md)
+
+---
+
+### 🏠 Local/Offline (Best for Personal Use)
+**The Absolute Bestest!** - Run AI models on your own machine, completely offline, 100% private!
+
+```bash
+# Linux/macOS - One command install
+./install-local.sh
+
+# Windows - Double-click or run
+.\install-local.bat
+
+# Start server
+rawrxd-serve
+
+# Or start everything (server + UI)
+./quick-start.sh
+```
+
+✨ **Benefits:**
+- ✅ **FREE** - No monthly costs
+- ✅ **PRIVATE** - Nothing leaves your machine
+- ✅ **OFFLINE** - Works without internet
+- ✅ **FAST** - Sub-10ms latency
+- ✅ **UNLIMITED** - No API limits
+
+📖 **Full Guide:** [OFFLINE_SETUP.md](OFFLINE_SETUP.md)
+
+---
+
+### ☁️ Cloud Deployment (For Production/Sharing)
 
 **Cost: \/month | Free tier: 18 months on \ credit**
-
-## Quick Start
 
 1. **Create DigitalOcean account** → https://digitalocean.com
 2. **Grab \ credit** (60 days) or enable billing
@@ -74,14 +117,32 @@ http://<droplet-ip>:8080/docs
 
 ## Cost
 
+### Cloud Deployment Costs
 | Component | Cost | Details |
 |-----------|------|---------|
 | Spaces | \/mo | 250 GB included, 1 TB egress free, CDN auto |
 | Droplet | \/mo | 1 vCPU, 1 GB RAM, 25 GB SSD, no backups |
 | **Total** | **\/mo** | **18 months free on \ credit** |
 
+### Local/Offline Costs
+| Component | Cost | Details |
+|-----------|------|---------|
+| Hardware | $0 (use existing) | Your computer |
+| Software | **$0** | 100% Free & Open Source |
+| Models | **$0** | Free from HuggingFace |
+| Bandwidth | **$0** | No internet needed |
+| **Total** | **$0/month** | **Forever Free!** |
+
+---
+
 ## Documentation
 
+### Local/Offline Setup
+- **Offline Setup Guide:** [OFFLINE_SETUP.md](OFFLINE_SETUP.md) ⭐ **Start Here!**
+- **Install Scripts:** `install-local.sh` (Linux/macOS) or `install-local.bat` (Windows)
+- **Model Manager:** `model-manager.sh` - Download and manage models offline
+
+### Cloud Deployment
 - Full setup guide: [deploy/README-CLOUD-HOSTING.md](deploy/README-CLOUD-HOSTING.md)
 - Deployment scripts: [deploy/scripts/](deploy/scripts/)
 - Terraform configs: [deploy/terraform/](deploy/terraform/)
