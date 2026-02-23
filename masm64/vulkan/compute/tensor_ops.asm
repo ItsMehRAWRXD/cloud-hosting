@@ -75,13 +75,7 @@ tensor_found_slot:
     mov ecx, edx
     rep movsd
     
-    ; Restore rdi to point to tensor descriptor
-    sub rdi, edx
-    sub rdi, edx
-    sub rdi, edx
-    sub rdi, edx
-    
-    ; Store number of dimensions
+    ; Recalculate tensor descriptor pointer from pool base
     lea rdi, g_tensorPool
     imul eax, SIZEOF TensorDescriptor
     add rdi, rax
@@ -383,6 +377,7 @@ TensorFree ENDP
 TensorGetShape PROC
     push rbp
     mov rbp, rsp
+    push rbx
     push rdi
     push rsi
     
@@ -394,14 +389,17 @@ TensorGetShape PROC
     test r8, r8
     jz shape_error
     
+    ; Save original tensor pointer for numDims access
+    mov rbx, rcx
+    
     ; Copy dimensions
     lea rsi, [rcx + TensorDescriptor.dimensions]
     mov rdi, rdx
     mov ecx, 8
     rep movsd
     
-    ; Copy numDims
-    mov eax, [rsi + TensorDescriptor.numDims - TensorDescriptor.dimensions - 32]
+    ; Copy numDims from saved tensor pointer
+    mov eax, [rbx + TensorDescriptor.numDims]
     mov [r8], eax
     
     xor eax, eax    ; Success
@@ -413,6 +411,7 @@ shape_error:
 shape_done:
     pop rsi
     pop rdi
+    pop rbx
     pop rbp
     ret
 TensorGetShape ENDP

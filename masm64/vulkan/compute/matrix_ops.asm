@@ -178,12 +178,71 @@ MatMulF32_AVX2 PROC
     test r15, r15
     jz matmul_avx_error
     
-    ; For now, fall back to scalar version
-    ; Full AVX2 implementation would use vbroadcastss, vfmadd231ps, etc.
-    ; This requires more complex alignment and loop handling
+    ; Fall through to scalar implementation
+    ; AVX2 vectorized loops can be added later for performance
+    ; For correctness, use the same triple-nested loop as MatMulF32
     
-    ; TODO: Implement AVX2 vectorized loops
-    ; For demonstration, using scalar path
+    ; Outer loop: iterate over rows of A (M)
+    xor r9, r9          ; i = 0
+    
+matmul_avx_i_loop:
+    cmp r9, r13
+    jae matmul_avx_success
+    
+    ; Middle loop: iterate over cols of B (N)
+    xor r10, r10        ; j = 0
+    
+matmul_avx_j_loop:
+    cmp r10, r15
+    jae matmul_avx_i_next
+    
+    ; Initialize accumulator
+    xorps xmm0, xmm0    ; sum = 0.0f
+    
+    ; Inner loop: iterate over K
+    xor r11, r11        ; k = 0
+    
+matmul_avx_k_loop:
+    cmp r11, r14
+    jae matmul_avx_k_done
+    
+    ; Calculate A[i,k] address: A + (i*K + k)*4
+    mov rax, r9
+    imul rax, r14
+    add rax, r11
+    shl rax, 2
+    movss xmm1, DWORD PTR [rdi + rax]
+    
+    ; Calculate B[k,j] address: B + (k*N + j)*4
+    mov rax, r11
+    imul rax, r15
+    add rax, r10
+    shl rax, 2
+    movss xmm2, DWORD PTR [rsi + rax]
+    
+    ; Multiply and accumulate
+    mulss xmm1, xmm2
+    addss xmm0, xmm1
+    
+    inc r11
+    jmp matmul_avx_k_loop
+    
+matmul_avx_k_done:
+    ; Store result C[i,j] = sum
+    mov rax, r9
+    imul rax, r15
+    add rax, r10
+    shl rax, 2
+    movss DWORD PTR [r12 + rax], xmm0
+    
+    inc r10
+    jmp matmul_avx_j_loop
+    
+matmul_avx_i_next:
+    inc r9
+    jmp matmul_avx_i_loop
+    
+matmul_avx_success:
     xor eax, eax
     jmp matmul_avx_cleanup
     
