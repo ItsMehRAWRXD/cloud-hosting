@@ -30,3 +30,21 @@ terraform.tfstate*
 *.tfvars
 .env
 .env.local
+
+# Qt/CMake build artifacts
+build/
+cmake-build-*/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*.autosave
+*.pro.user
+*.user
