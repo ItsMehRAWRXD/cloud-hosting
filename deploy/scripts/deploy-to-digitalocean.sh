@@ -47,7 +47,10 @@ cd /models
 # Download each 2GB model
 for model in quantum-2b-q4.gguf quantum-3b-q4.gguf quantum-7b-q4.gguf; do
     echo "  [↓] $model..."
-    wget -q --show-progress "${SPACES_CDN}/${model}" || echo "  [!] Failed to download $model"
+    if ! wget -q --show-progress "${SPACES_CDN}/${model}"; then
+        echo "  [!] Failed to download $model from ${SPACES_CDN}/${model}"
+        echo "      Check: 1) Model exists in Spaces, 2) CDN URL is correct, 3) Network connectivity"
+    fi
 done
 
 echo "[✓] Models downloaded"
