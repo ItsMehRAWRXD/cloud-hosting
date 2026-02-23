@@ -25,7 +25,12 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
         std::string arg(argv[i]);
         if ((arg == "--port" || arg == "-p") && i + 1 < argc) {
-            port = static_cast<uint16_t>(std::stoi(argv[++i]));
+            try {
+                port = static_cast<uint16_t>(std::stoi(argv[++i]));
+            } catch (const std::exception&) {
+                std::cerr << "Invalid port number: " << argv[i] << "\n";
+                return 1;
+            }
         } else if (arg == "--help" || arg == "-h") {
             std::cout << "Usage: RawrXD-Standalone [--port N]\n"
                       << "  --port, -p   HTTP listen port (default: 9000)\n"

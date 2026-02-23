@@ -198,7 +198,7 @@ void StandaloneWebBridge::handleClient(socket_t client) {
         }
     }
 
-    std::string raw = serialiseResponse(resp);
+    std::string raw = serializeResponse(resp);
     ::send(client, raw.data(), static_cast<int>(raw.size()), 0);
 }
 
@@ -249,7 +249,7 @@ HttpRequest StandaloneWebBridge::parseRequest(const std::string& raw) {
     return req;
 }
 
-std::string StandaloneWebBridge::serialiseResponse(const HttpResponse& resp) {
+std::string StandaloneWebBridge::serializeResponse(const HttpResponse& resp) {
     std::ostringstream out;
     out << "HTTP/1.1 " << resp.status << " ";
     switch (resp.status) {
@@ -264,7 +264,7 @@ std::string StandaloneWebBridge::serialiseResponse(const HttpResponse& resp) {
     out << "Content-Type: "   << resp.contentType          << "\r\n";
     out << "Content-Length: " << resp.body.size()           << "\r\n";
     out << "Connection: close\r\n";
-    out << "Access-Control-Allow-Origin: *\r\n";
+    out << "Access-Control-Allow-Origin: http://localhost\r\n";
     out << "\r\n";
     out << resp.body;
     return out.str();

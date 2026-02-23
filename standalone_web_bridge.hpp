@@ -74,7 +74,7 @@ public:
 private:
     void handleClient(socket_t client);
     HttpRequest  parseRequest(const std::string& raw);
-    std::string  serialiseResponse(const HttpResponse& resp);
+    std::string  serializeResponse(const HttpResponse& resp);
     void registerBuiltinRoutes();
 
     uint16_t   m_port;
