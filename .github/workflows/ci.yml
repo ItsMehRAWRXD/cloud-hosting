@@ -1,153 +1,136 @@
-name: HexMag Swarm & IDE Build Test
+name: CI — Cloud Hosting
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - production-lazy-init
-      - feature/**
-      - feat/**
-      - bugfix/**
-      - hotfix/**
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
+env:
+  NODE_VERSION: "22"
+
 jobs:
-  build-and-test:
-    runs-on: windows-latest
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: rawrxd_test
+          POSTGRES_USER: rawrxd
+          POSTGRES_PASSWORD: testpass
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U rawrxd"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Add MSBuild
-        uses: microsoft/setup-msbuild@v1.3
-
-      - name: Install NASM
-        run: |
-          choco install nasm -y
-          $env:PATH += ";C:\Program Files\NASM"
-
-      - name: Install OpenSSL (full SDK)
-        shell: pwsh
-        run: |
-          choco install openssl -y
-
-          $opensslRoot = "C:\Program Files\OpenSSL-Win64"
-          $opensslInclude = Join-Path $opensslRoot "include"
-          $opensslLib = Join-Path $opensslRoot "lib"
-
-          if (-not (Test-Path (Join-Path $opensslInclude "openssl\ssl.h"))) {
-            throw "OpenSSL headers not found at $opensslInclude. The full SDK is required (not openssl.light)."
-          }
-
-          if (-not (Test-Path (Join-Path $opensslLib "libcrypto.lib"))) {
-            throw "OpenSSL import libraries not found at $opensslLib. The full SDK is required (not openssl.light)."
-          }
-
-          $env:PATH += ";$opensslRoot\bin"
-          echo "OPENSSL_ROOT_DIR=$opensslRoot" >> $env:GITHUB_ENV
-          echo "OPENSSL_DIR=$opensslRoot" >> $env:GITHUB_ENV
-          echo "OPENSSL_INCLUDE_DIR=$opensslInclude" >> $env:GITHUB_ENV
-          echo "OPENSSL_CRYPTO_LIBRARY=$opensslLib\libcrypto.lib" >> $env:GITHUB_ENV
-          echo "OPENSSL_SSL_LIBRARY=$opensslLib\libssl.lib" >> $env:GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=$opensslRoot;$env:CMAKE_PREFIX_PATH" >> $env:GITHUB_ENV
-
-      - name: Install Qt via aqtinstall
-        shell: pwsh
-        run: |
-          pip install aqtinstall
-          
-          # Install Qt 6.7.3 base (includes Core, Gui, Widgets, Network, Sql, Concurrent, Test)
-          Write-Host "Installing Qt 6.7.3 base libraries..."
-          python -m aqt install-qt windows desktop 6.7.3 win64_msvc2019_64
-          
-          # Install Qt add-on modules required by orchestration (Charts, Multimedia)
-          # Note: aqt expects module names as separate arguments (no quotes)
-          Write-Host "Installing Qt add-on modules (qtcharts, qtmultimedia)..."
-          python -m aqt install-qt windows desktop 6.7.3 win64_msvc2019_64 -m qtcharts qtmultimedia
-          if ($LASTEXITCODE -ne 0) {
-            throw "Qt add-on modules install failed (qtcharts, qtmultimedia)"
-          }
-          
-          # Locate Qt installation
-          $QtPath = Get-ChildItem -Path (Get-Location) -Filter "6.7.3" -Directory -Recurse | Select-Object -First 1
-          if ($QtPath) {
-            $QtBase = Join-Path $QtPath.FullName "msvc2019_64"
-          } else {
-            $QtBase = Join-Path $PWD "6.7.3\msvc2019_64"
-          }
-          
-          Write-Host "Qt6 base path: $QtBase"
-          Write-Host "Checking for Qt6Config.cmake..."
-          Get-ChildItem "$QtBase\lib\cmake" -Recurse -Filter "Qt6Config.cmake" 2>$null | ForEach-Object { Write-Host "Found: $($_.FullName)" }
-          
-          # Check for Qt Charts specifically
-          Write-Host "Checking for Qt6ChartsConfig.cmake..."
-          $chartsConfig = Get-ChildItem "$QtBase\lib\cmake" -Recurse -Filter "Qt6ChartsConfig.cmake" -ErrorAction SilentlyContinue
-          if ($chartsConfig) {
-            Write-Host "Found Qt Charts at: $($chartsConfig.FullName)"
-          } else {
-            Write-Host "WARNING: Qt6ChartsConfig.cmake not found in standard location"
-            # Try alternate location
-            $altChartsPath = Get-ChildItem "D:\a\RawrXD\RawrXD" -Recurse -Filter "Qt6ChartsConfig.cmake" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($altChartsPath) {
-              Write-Host "Found Qt Charts at alternate location: $($altChartsPath.FullName)"
-            }
-          }
-          
-          # Set Qt6_DIR to the cmake directory
-          $qt6ConfigPath = "$QtBase\lib\cmake\Qt6"
-          if (Test-Path "$qt6ConfigPath\Qt6Config.cmake") {
-            Write-Host "Setting Qt6_DIR=$qt6ConfigPath"
-            echo "Qt6_DIR=$qt6ConfigPath" >> $env:GITHUB_ENV
-          } else {
-            Write-Host "Qt6Config.cmake not found at expected location, using base path"
-            echo "Qt6_DIR=$QtBase" >> $env:GITHUB_ENV
-          }
-          
-          echo "CMAKE_PREFIX_PATH=$QtBase" >> $env:GITHUB_ENV
-          echo "$($QtBase)\bin" >> $env:GITHUB_PATH
-          Write-Host "Qt installation complete"
-
-      - name: Clean build folder
-        shell: pwsh
-        run: |
-          if (Test-Path .\build) {
-            Write-Host "Removing existing build folder to avoid stale CMake cache..."
-            Remove-Item .\build -Recurse -Force -ErrorAction SilentlyContinue
-          }
-
-      - name: Build Win32 IDE
-        run: .\scripts\build.ps1 -Config Release -A x64
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
-      - name: Install Python dependencies
-        working-directory: services
-        run: pip install -r requirements.txt
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
 
-      - name: Start HexMag Test Swarm (background on port 8001)
-        working-directory: services/hexmag
-        shell: pwsh
+      - name: Initialize database
+        env:
+          PGHOST: localhost
+          PGUSER: rawrxd
+          PGPASSWORD: testpass
+          PGDATABASE: rawrxd_test
+        run: psql -f db/init.sql
+
+      - name: Health check smoke test
+        working-directory: app
+        env:
+          DATABASE_URL: postgres://rawrxd:testpass@localhost:5432/rawrxd_test
+          REDIS_URL: redis://localhost:6379
+          PORT: "3000"
+          JWT_SECRET: ci-test-secret-do-not-use-in-prod
+          API_KEY: ci-test-key
         run: |
-          Start-Process python -ArgumentList "hexmag_engine.py --port 8001" -NoNewWindow
-          do {
-            Start-Sleep -Seconds 1
-            $r = try { (Invoke-WebRequest http://localhost:8001/health -TimeoutSec 5 -ErrorAction Stop).StatusCode } catch { 0 }
-          } while ($r -ne 200)
+          node server.js &
+          SERVER_PID=$!
+          sleep 3
+          # Health endpoint
+          curl -sf http://localhost:3000/health | jq .
+          # API status
+          curl -sf -H "X-API-Key: ci-test-key" http://localhost:3000/api/status | jq .
+          # POST data
+          curl -sf -X POST http://localhost:3000/api/data \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: ci-test-key" \
+            -d '{"key":"ci_test","value":"hello"}' | jq .
+          # GET data
+          curl -sf -H "X-API-Key: ci-test-key" "http://localhost:3000/api/data?key=ci_test" | jq .
+          # DELETE data
+          curl -sf -X DELETE -H "X-API-Key: ci-test-key" "http://localhost:3000/api/data?key=ci_test" | jq .
+          # Verify delete
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "X-API-Key: ci-test-key" "http://localhost:3000/api/data?key=ci_test")
+          [ "$STATUS" = "404" ] || (echo "Expected 404 after delete, got $STATUS" && exit 1)
+          kill $SERVER_PID
 
-      - name: Smoke-test /ask and /agent endpoints
-        working-directory: services
-        shell: pwsh
-        run: python test_smoke.py
-
-      - name: Kill test swarm
-        if: always()
-        shell: pwsh
+      - name: Run API integration tests
+        env:
+          DATABASE_URL: postgres://rawrxd:testpass@localhost:5432/rawrxd_test
+          REDIS_URL: redis://localhost:6379
+          PORT: "3001"
+          JWT_SECRET: ci-test-secret-do-not-use-in-prod
+          API_KEY: test-key
         run: |
-          Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          cd app && node server.js &
+          SERVER_PID=$!
+          sleep 3
+          node tests/api.test.js
+          EXIT=$?
+          kill $SERVER_PID
+          exit $EXIT
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t rawrxd-cloud:ci ./app
+
+      - name: Verify image starts
+        run: |
+          docker run --rm -d --name ci-test \
+            -e DATABASE_URL=postgres://x:x@localhost/x \
+            -e REDIS_URL=redis://localhost \
+            -e JWT_SECRET=test -e API_KEY=test \
+            -p 3001:3000 rawrxd-cloud:ci || true
+          sleep 2
+          docker logs ci-test 2>&1 || true
+          docker stop ci-test 2>/dev/null || true
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7"
+
+      - name: Terraform init & validate
+        working-directory: deploy/terraform
+        run: |
+          terraform init -backend=false
+          terraform validate

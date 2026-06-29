@@ -1,46 +1,36 @@
-# Multi-stage build for llama.cpp server with quantized model support
-FROM ubuntu:22.04 as builder
+# ============================================================================
+# RawrXD Cloud-Hosting: llama.cpp Inference Server
+# Production-Ready Multi-Stage Build  
+# ============================================================================
+FROM ubuntu:22.04 AS builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    curl \
-    wget \
+ARG LLAMA_CPP_VERSION=b5560
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential cmake git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone and build llama.cpp
 WORKDIR /build
-RUN git clone https://github.com/ggerganov/llama.cpp.git && \
-    cd llama.cpp && \
-    mkdir build && \
-    cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build . --config Release -j $(nproc)
+RUN git clone --depth 1 --branch ${LLAMA_CPP_VERSION} \
+    https://github.com/ggml-org/llama.cpp.git . \
+    && cmake -B build -DGGML_NATIVE=OFF -DLLAMA_SERVER=ON \
+    && cmake --build build --config Release -j$(nproc) --target llama-server
 
-# Runtime stage
+# --- Runtime ---
 FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -s /bin/false llama
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
-    libgomp1 \
-    curl \
-    wget \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /build/build/bin/llama-server /usr/local/bin/
+RUN chmod +x /usr/local/bin/llama-server
 
-# Copy built llama.cpp server
-COPY --from=builder /build/llama.cpp/build/bin/server /usr/local/bin/llama-server
-
-# Create models directory
-RUN mkdir -p /models
-
-WORKDIR /app
-
-# Expose API port
+VOLUME /models
+USER llama
 EXPOSE 8080
 
-# Default command: run server with CPU-only mode
-ENTRYPOINT ["/usr/local/bin/llama-server"]
-CMD ["--host", "0.0.0.0", "--port", "8080", "--threads", "2"]
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["llama-server"]
+CMD ["--host", "0.0.0.0", "--port", "8080", "-m", "/models/model.gguf", "-ngl", "99", "-c", "4096"]

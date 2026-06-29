@@ -1,1 +1,16 @@
-*For changes to the core `ggml` library (including to the CMake build system), please open a PR in https://github.com/ggml-org/llama.cpp. Doing so will make your PR more visible, better tested and more likely to be reviewed.*
+## What Changed
+<!-- Brief description -->
+
+## Type
+- [ ] Infrastructure (Terraform)
+- [ ] Docker/Container
+- [ ] CI/CD
+- [ ] Documentation
+- [ ] Security
+
+## Checklist
+- [ ] Terraform plan shows expected changes
+- [ ] Docker image builds successfully
+- [ ] No secrets committed
+- [ ] SSH access remains restricted
+- [ ] README updated if needed
